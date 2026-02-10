@@ -6,11 +6,20 @@ RUN npm install --legacy-peer-deps --ignore-scripts
 COPY . .
 RUN npm run build
 
-# Serve with simple http-server
+# Production stage
 FROM node:20-alpine
 WORKDIR /app
-RUN npm install -g http-server
+
+# Copy package.json for type: module support
+COPY package*.json ./
+
+# Install only express for production
+RUN npm install express --legacy-peer-deps
+
+# Copy build output and server
 COPY --from=builder /app/build ./build
+COPY server.js ./
+
 ENV PORT=3000
 EXPOSE 3000
-CMD http-server ./build -p $PORT -a 0.0.0.0 --proxy http://localhost:$PORT?
+CMD ["node", "server.js"]
