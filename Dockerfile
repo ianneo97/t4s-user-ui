@@ -1,35 +1,19 @@
-# Build stage
-FROM node:20-alpine AS builder
-
-WORKDIR /app
-
-# Copy package files
-COPY package*.json ./
-
-# Install all dependencies (including dev for build)
-RUN npm install --legacy-peer-deps --ignore-scripts
-
-# Copy source
-COPY . .
-
-# Build
-RUN npm run build
-
-# Production stage
 FROM node:20-alpine
 
 WORKDIR /app
 
-# Copy package files and install production deps only
-COPY package*.json ./
-RUN npm install --legacy-peer-deps --ignore-scripts --omit=dev
+# Copy everything
+COPY . .
 
-# Copy built files and server
-COPY --from=builder /app/build ./build
-COPY server.js ./
+# Install dependencies
+RUN npm install --legacy-peer-deps --ignore-scripts
 
-# Expose port
+# Build the app
+RUN npm run build
+
+# Set port
+ENV PORT=3000
 EXPOSE 3000
 
-# Start
+# Start with express server
 CMD ["node", "server.js"]
