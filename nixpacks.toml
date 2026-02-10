@@ -1,8 +1,11 @@
 [phases.setup]
-nixPkgs = ["nodejs_22"]
+nixPkgs = ["nodejs_20"]
+
+[variables]
+NODE_VERSION = "20"
 
 [phases.install]
-cmds = ["npm ci"]
+cmds = ["rm -rf node_modules package-lock.json && npm install --legacy-peer-deps"]
 
 [phases.build]
 cmds = ["npm run build"]
