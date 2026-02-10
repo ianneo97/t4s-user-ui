@@ -18,8 +18,8 @@ RUN npm install express --legacy-peer-deps
 
 # Copy build output and server
 COPY --from=builder /app/build ./build
-COPY server.js ./
+COPY server.cjs ./
 
 ENV PORT=3000
 EXPOSE 3000
-CMD ["node", "server.js"]
+CMD ["node", "server.cjs"]
