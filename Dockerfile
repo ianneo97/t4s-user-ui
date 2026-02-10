@@ -15,15 +15,8 @@ FROM nginx:alpine
 # Copy built files
 COPY --from=builder /app/build /usr/share/nginx/html
 
-# Copy nginx config for SPA
-RUN echo 'server { \
-    listen 3000; \
-    root /usr/share/nginx/html; \
-    index index.html; \
-    location / { \
-        try_files $uri $uri/ /index.html; \
-    } \
-}' > /etc/nginx/conf.d/default.conf
+# Copy nginx config template
+COPY nginx.conf.template /etc/nginx/templates/default.conf.template
 
 EXPOSE 3000
 
