@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useForm, useFormContext, useFieldArray } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -18,6 +18,9 @@ import {
 
 import { CreationFlow } from '@/components/shared/creation-flow'
 import type { CreationStep } from '@/components/shared/creation-flow'
+import { CreationModePicker } from '@/components/shared/creation-mode-picker'
+import type { CreationMode } from '@/components/shared/creation-mode-picker'
+import { QuickAddComponent } from '@/components/shared/quick-add-component'
 import { ImageUploader } from '@/components/shared/image-uploader'
 import type { ImageFile } from '@/components/shared/image-uploader'
 import { FileUploader } from '@/components/shared/file-uploader'
@@ -1483,8 +1486,162 @@ function Label({
   )
 }
 
+// Mode selection screen
+function ModeSelectionScreen({
+  onSelectMode,
+  hasDraft,
+  onResumeDraft,
+}: {
+  onSelectMode: (mode: CreationMode) => void
+  hasDraft: boolean
+  onResumeDraft: () => void
+}) {
+  const navigate = useNavigate()
+  const [selectedMode, setSelectedMode] = useState<CreationMode>('quick')
+
+  return (
+    <div className="relative min-h-screen">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none fixed inset-0 -z-10 overflow-hidden"
+      >
+        <div className="absolute -left-32 top-[-8rem] h-[22rem] w-[22rem] rounded-full bg-[hsl(16_96%_58%/.16)] blur-3xl" />
+        <div className="absolute right-[-8rem] top-[20%] h-[20rem] w-[20rem] rounded-full bg-[hsl(222_90%_56%/.12)] blur-3xl" />
+        <div className="page-grain absolute inset-0 opacity-[0.28]" />
+      </div>
+
+      <main className="mx-auto max-w-2xl px-4 py-12 sm:px-6 lg:px-8 lg:py-16">
+        <div className="animate-fade-up text-center">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-accent/10">
+            <Layers className="h-8 w-8 text-accent" />
+          </div>
+          <h1 className="mt-6 text-3xl sm:text-4xl">Create Component</h1>
+          <p className="mt-3 text-lg text-muted-foreground">
+            How would you like to add your component?
+          </p>
+        </div>
+
+        <div className="animate-fade-up stagger-1 mt-10">
+          <CreationModePicker
+            value={selectedMode}
+            onChange={setSelectedMode}
+            quickTitle="Quick Add"
+            quickDescription="Name, unit, and cost. Add substances and certs later."
+            fullTitle="Full Details"
+            fullDescription="Complete all information including specs and certificates."
+          />
+        </div>
+
+        {hasDraft && (
+          <div className="animate-fade-up stagger-2 mt-6">
+            <button
+              type="button"
+              onClick={onResumeDraft}
+              className="w-full rounded-2xl border-2 border-dashed border-amber-500/40 bg-amber-500/5 p-4 text-left transition-colors hover:border-amber-500/60 hover:bg-amber-500/10"
+            >
+              <p className="font-medium text-amber-600">Resume Draft</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                You have an unsaved component draft. Continue where you left off.
+              </p>
+            </button>
+          </div>
+        )}
+
+        <div className="animate-fade-up stagger-3 mt-8 flex justify-center gap-3">
+          <Button variant="outline" onClick={() => navigate('/catalog')}>
+            Cancel
+          </Button>
+          <Button variant="accent" onClick={() => onSelectMode(selectedMode)}>
+            Continue
+          </Button>
+        </div>
+      </main>
+    </div>
+  )
+}
+
 // Main component
 export function CreateMaterialPage() {
+  const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const [mode, setMode] = useState<CreationMode | 'selecting' | null>(null)
+  const [hasDraft, setHasDraft] = useState(false)
+
+  // Check for draft and URL params on mount
+  useEffect(() => {
+    const draft = getCachedDraft<Partial<MaterialFormData>>(
+      MATERIAL_CREATION_DRAFT_KEY
+    )
+    setHasDraft(!!draft)
+
+    // If mode is specified in URL, use it directly
+    const urlMode = searchParams.get('mode')
+    if (urlMode === 'quick' || urlMode === 'full') {
+      setMode(urlMode)
+    } else if (draft) {
+      // If there's a draft, show selection screen
+      setMode('selecting')
+    } else {
+      // Default to selection screen
+      setMode('selecting')
+    }
+  }, [searchParams])
+
+  const handleModeSelect = useCallback((selectedMode: CreationMode) => {
+    setMode(selectedMode)
+  }, [])
+
+  const handleResumeDraft = useCallback(() => {
+    setMode('full')
+  }, [])
+
+  const handleQuickAddSuccess = useCallback(
+    (componentId: string, continueToDetails: boolean) => {
+      if (continueToDetails) {
+        navigate(`/catalog/components/${componentId}`)
+      } else {
+        navigate('/catalog')
+      }
+    },
+    [navigate]
+  )
+
+  const handleQuickAddCancel = useCallback(() => {
+    setMode('selecting')
+  }, [])
+
+  // Show loading state while determining mode
+  if (mode === null) {
+    return null
+  }
+
+  // Show mode selection screen
+  if (mode === 'selecting') {
+    return (
+      <ModeSelectionScreen
+        onSelectMode={handleModeSelect}
+        hasDraft={hasDraft}
+        onResumeDraft={handleResumeDraft}
+      />
+    )
+  }
+
+  // Show quick add form
+  if (mode === 'quick') {
+    return (
+      <QuickAddComponent
+        onSuccess={handleQuickAddSuccess}
+        onCancel={handleQuickAddCancel}
+      />
+    )
+  }
+
+  // Show full creation flow
+  return <FullMaterialCreationFlow />
+}
+
+// Full creation flow (extracted from original CreateMaterialPage)
+function FullMaterialCreationFlow() {
   const navigate = useNavigate()
   const [hasDraft, setHasDraft] = useState(false)
 

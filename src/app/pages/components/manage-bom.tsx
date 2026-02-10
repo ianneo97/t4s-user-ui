@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
 import {
   Layers,
   Plus,
@@ -11,6 +14,8 @@ import {
   Save,
   Percent,
   Hash,
+  Sparkles,
+  DollarSign,
 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -19,6 +24,7 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { Spinner } from '@/components/ui/spinner'
+import { Textarea } from '@/components/ui/textarea'
 import {
   Dialog,
   DialogContent,
@@ -27,11 +33,61 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog'
 import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from '@/components/ui/sheet'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
+  Form,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage,
+} from '@/components/ui/form'
+import {
   getCachedMaterials,
   getCachedProductById,
   saveProductBomToCache,
+  createCachedMaterial,
 } from '@/infrastructure/cache/catalog-cache'
 import { cn } from '@/lib/utils'
+
+// Quick component schema for inline creation
+const quickComponentSchema = z.object({
+  name: z.string().min(1, 'Component name is required'),
+  description: z.string().optional(),
+  unitOfMeasurement: z.string().min(1, 'Unit is required'),
+  unitCost: z.coerce.number().min(0, 'Cost must be positive'),
+  unitCostCurrency: z.string().min(1, 'Currency is required'),
+})
+
+type QuickComponentFormData = z.infer<typeof quickComponentSchema>
+
+const UNITS = [
+  { value: 'kg', label: 'Kilogram (kg)' },
+  { value: 'g', label: 'Gram (g)' },
+  { value: 'm', label: 'Meter (m)' },
+  { value: 'cm', label: 'Centimeter (cm)' },
+  { value: 'pcs', label: 'Pieces' },
+  { value: 'sqm', label: 'Square Meter (m²)' },
+]
+
+const CURRENCIES = [
+  { value: 'USD', label: 'USD ($)' },
+  { value: 'EUR', label: 'EUR (€)' },
+  { value: 'GBP', label: 'GBP (£)' },
+  { value: 'CNY', label: 'CNY (¥)' },
+]
 
 // Types
 interface Material {
@@ -195,6 +251,262 @@ function BOMItemRow({
   )
 }
 
+// Inline component creation panel
+function InlineComponentCreation({
+  isOpen,
+  onClose,
+  onSuccess,
+  onNavigateToSubstances,
+}: {
+  isOpen: boolean
+  onClose: () => void
+  onSuccess: (material: Material) => void
+  onNavigateToSubstances: (componentId: string) => void
+}) {
+  const form = useForm<QuickComponentFormData>({
+    resolver: zodResolver(quickComponentSchema),
+    defaultValues: {
+      name: '',
+      description: '',
+      unitOfMeasurement: '',
+      unitCost: 0,
+      unitCostCurrency: 'USD',
+    },
+  })
+
+  const handleSubmit = useCallback(
+    async (data: QuickComponentFormData) => {
+      try {
+        const created = createCachedMaterial({
+          ...data,
+          weight: 0,
+          length: undefined,
+          width: undefined,
+          height: undefined,
+          photos: [],
+          certificates: [],
+          substances: [],
+        })
+
+        // Return the created material
+        onSuccess({
+          id: created.id,
+          name: created.name,
+          unitOfMeasurement: created.unitOfMeasurement,
+          unitCost: created.unitCost,
+          unitCostCurrency: created.unitCostCurrency,
+        })
+
+        form.reset()
+        onClose()
+
+        // Show toast with action to add substances
+        toast.success(`"${created.name}" created and added`, {
+          action: {
+            label: 'Add Substances',
+            onClick: () => onNavigateToSubstances(created.id),
+          },
+        })
+      } catch (error) {
+        console.error('Failed to create component:', error)
+        toast.error('Unable to create component. Please try again.')
+      }
+    },
+    [form, onClose, onSuccess, onNavigateToSubstances]
+  )
+
+  const isSubmitting = form.formState.isSubmitting
+
+  return (
+    <Sheet open={isOpen} onOpenChange={(open: boolean) => !open && onClose()}>
+      <SheetContent className="flex w-full flex-col overflow-hidden sm:max-w-lg">
+        <SheetHeader>
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/10">
+              <Sparkles className="h-5 w-5 text-accent" />
+            </div>
+            <div>
+              <SheetTitle>Quick Add Component</SheetTitle>
+              <SheetDescription>
+                Create a component and add it to the BOM
+              </SheetDescription>
+            </div>
+          </div>
+        </SheetHeader>
+
+        <Form {...form}>
+          <form
+            onSubmit={form.handleSubmit(handleSubmit)}
+            className="mt-6 flex flex-1 flex-col space-y-6 overflow-y-auto"
+          >
+            <div className="surface-subtle rounded-2xl p-4">
+              <div className="mb-3 flex items-center gap-2">
+                <Layers className="h-4 w-4 text-accent" />
+                <p className="text-sm font-medium">Identity</p>
+              </div>
+
+              <div className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel required>Name</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="e.g., Organic Cotton Fabric"
+                          autoFocus
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Description</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="Brief description (optional)"
+                          className="min-h-[60px]"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
+
+            <div className="surface-subtle rounded-2xl p-4">
+              <div className="mb-3 flex items-center gap-2">
+                <DollarSign className="h-4 w-4 text-accent" />
+                <p className="text-sm font-medium">Cost & Unit</p>
+              </div>
+
+              <div className="grid gap-4">
+                <FormField
+                  control={form.control}
+                  name="unitOfMeasurement"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel required>Unit</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select unit" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {UNITS.map((unit) => (
+                            <SelectItem key={unit.value} value={unit.value}>
+                              {unit.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="grid grid-cols-2 gap-3">
+                  <FormField
+                    control={form.control}
+                    name="unitCost"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel required>Cost</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            min={0}
+                            step={0.01}
+                            placeholder="0.00"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="unitCostCurrency"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel required>Currency</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Currency" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {CURRENCIES.map((curr) => (
+                              <SelectItem key={curr.value} value={curr.value}>
+                                {curr.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-auto flex gap-3 border-t border-border pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onClose}
+                disabled={isSubmitting}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                variant="accent"
+                disabled={isSubmitting}
+                className="flex-1 gap-2"
+              >
+                {isSubmitting ? (
+                  <>
+                    <Spinner size="sm" />
+                    Creating...
+                  </>
+                ) : (
+                  <>
+                    <Plus className="h-4 w-4" />
+                    Create & Add
+                  </>
+                )}
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </SheetContent>
+    </Sheet>
+  )
+}
+
 // Main component
 export function ManageBOMPage() {
   const navigate = useNavigate()
@@ -204,6 +516,7 @@ export function ManageBOMPage() {
   const [availableMaterials, setAvailableMaterials] = useState<Material[]>([])
   const [productName, setProductName] = useState('Product')
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [isInlineCreateOpen, setIsInlineCreateOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [isSaving, setIsSaving] = useState(false)
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
@@ -289,6 +602,14 @@ export function ManageBOMPage() {
       },
     ])
   }, [])
+
+  // Handle inline component creation success
+  const handleInlineCreateSuccess = useCallback((material: Material) => {
+    // Refresh available materials list
+    loadAvailableMaterials()
+    // Add the newly created material to BOM
+    handleAddMaterial(material)
+  }, [loadAvailableMaterials, handleAddMaterial])
 
   const openMaterialPicker = () => {
     loadAvailableMaterials()
@@ -453,14 +774,25 @@ export function ManageBOMPage() {
                     </p>
                   </div>
 
-                  <Button
-                    type="button"
-                    onClick={openMaterialPicker}
-                    className="gap-2"
-                  >
-                    <Plus className="h-4 w-4" />
-                    Add Component
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setIsInlineCreateOpen(true)}
+                      className="gap-2"
+                    >
+                      <Sparkles className="h-4 w-4" />
+                      Create New
+                    </Button>
+                    <Button
+                      type="button"
+                      onClick={openMaterialPicker}
+                      className="gap-2"
+                    >
+                      <Plus className="h-4 w-4" />
+                      Add Existing
+                    </Button>
+                  </div>
                 </div>
               </div>
 
@@ -474,15 +806,26 @@ export function ManageBOMPage() {
                     Add materials and components to build your product bill of
                     materials.
                   </p>
-                  <Button
-                    type="button"
-                    variant="accent"
-                    onClick={openMaterialPicker}
-                    className="mt-6 gap-2"
-                  >
-                    <Plus className="h-4 w-4" />
-                    Add First Component
-                  </Button>
+                  <div className="mt-6 flex items-center gap-3">
+                    <Button
+                      type="button"
+                      variant="accent"
+                      onClick={() => setIsInlineCreateOpen(true)}
+                      className="gap-2"
+                    >
+                      <Sparkles className="h-4 w-4" />
+                      Create New
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={openMaterialPicker}
+                      className="gap-2"
+                    >
+                      <Plus className="h-4 w-4" />
+                      Add Existing
+                    </Button>
+                  </div>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -581,10 +924,27 @@ export function ManageBOMPage() {
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="flex max-h-[80vh] max-w-2xl flex-col overflow-hidden">
           <DialogHeader>
-            <DialogTitle>Add Component</DialogTitle>
-            <DialogDescription>
-              Select materials to include in this bill of materials.
-            </DialogDescription>
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <DialogTitle>Add Component</DialogTitle>
+                <DialogDescription>
+                  Select materials to include in this bill of materials.
+                </DialogDescription>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setIsDialogOpen(false)
+                  setIsInlineCreateOpen(true)
+                }}
+                className="shrink-0 gap-2"
+              >
+                <Sparkles className="h-4 w-4" />
+                Create New
+              </Button>
+            </div>
           </DialogHeader>
 
           <div className="relative my-4">
@@ -611,18 +971,23 @@ export function ManageBOMPage() {
               {filteredMaterials.length === 0 && (
                 <div className="py-12 text-center text-sm text-muted-foreground">
                   {availableMaterials.length === 0
-                    ? 'No components found in cache. Create one first.'
+                    ? 'No components found in cache.'
                     : `No materials found matching "${searchQuery}".`}
-                  {availableMaterials.length === 0 && (
-                    <div className="mt-4">
-                      <Button asChild variant="outline" size="sm" className="gap-2">
-                        <Link to="/materials/create">
-                          <Plus className="h-4 w-4" />
-                          Create Component
-                        </Link>
-                      </Button>
-                    </div>
-                  )}
+                  <div className="mt-4">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="gap-2"
+                      onClick={() => {
+                        setIsDialogOpen(false)
+                        setIsInlineCreateOpen(true)
+                      }}
+                    >
+                      <Sparkles className="h-4 w-4" />
+                      Create Component
+                    </Button>
+                  </div>
                 </div>
               )}
             </div>
@@ -639,6 +1004,15 @@ export function ManageBOMPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <InlineComponentCreation
+        isOpen={isInlineCreateOpen}
+        onClose={() => setIsInlineCreateOpen(false)}
+        onSuccess={handleInlineCreateSuccess}
+        onNavigateToSubstances={(componentId) =>
+          navigate(`/catalog/components/${componentId}?tab=substances`)
+        }
+      />
     </div>
   )
 }
