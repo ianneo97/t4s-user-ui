@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "start": "serve -s build -l $PORT",
+    "start": "serve -s build -l tcp://0.0.0.0:${PORT:-3000}",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write src/",
