@@ -1,1 +1,1 @@
-web: node server.cjs
+web: npx serve -s build -l $PORT
