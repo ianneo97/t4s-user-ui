@@ -1,11 +1,6 @@
 [phases.setup]
 nixPkgs = ["nodejs_20"]
 
-[variables]
-NPM_CONFIG_PRODUCTION = "false"
-NODE_ENV = "production"
-CI = "true"
-
 [phases.install]
 cmds = ["npm install --legacy-peer-deps --ignore-scripts"]
 
@@ -13,4 +8,4 @@ cmds = ["npm install --legacy-peer-deps --ignore-scripts"]
 cmds = ["npm run build"]
 
 [start]
-cmd = "node server.js"
+cmd = "npx http-server ./build -p $PORT -a 0.0.0.0 --proxy http://localhost:$PORT?"
