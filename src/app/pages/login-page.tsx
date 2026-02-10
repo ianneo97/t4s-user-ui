@@ -81,7 +81,7 @@ export function LoginPage() {
             </div>
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                Li & Fung
+                Your Company
               </p>
               <p className="text-base font-semibold">Traceability Studio</p>
             </div>
@@ -122,15 +122,13 @@ export function LoginPage() {
 
           <div className="flex items-center justify-between">
             <p className="text-sm text-muted-foreground">
-              &copy; {new Date().getFullYear()} Li & Fung Limited
+              &copy; {new Date().getFullYear()} Your Company
             </p>
             <a
-              href="https://www.lifung.com"
-              target="_blank"
-              rel="noopener noreferrer"
+              href="#"
               className="text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground"
             >
-              lifung.com
+              yourcompany.com
             </a>
           </div>
         </section>

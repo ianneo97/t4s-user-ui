@@ -1,10 +1,8 @@
 import { Link, useLocation } from 'react-router-dom'
-import { useMsal } from '@azure/msal-react'
 import {
   Boxes,
   Building2,
   LayoutDashboard,
-  LogOut,
   Settings,
 } from 'lucide-react'
 
@@ -21,38 +19,35 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/utils'
 
-const navItems = [
-  { href: '/', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/catalog', label: 'Catalog', icon: Boxes },
-  { href: '/suppliers', label: 'Suppliers', icon: Building2 },
-]
+// Hook to get the current variant prefix (v1, v2, v3, v4, or empty)
+function useVariantPrefix() {
+  const location = useLocation()
+  const match = location.pathname.match(/^\/(v[1-4])/)
+  return match ? match[1] : ''
+}
 
 export function AppNavigation() {
-  const { instance, accounts } = useMsal()
   const location = useLocation()
-  const user = accounts[0]
+  const variantPrefix = useVariantPrefix()
+  const basePath = variantPrefix ? `/${variantPrefix}` : ''
 
-  const initials = user?.name
-    ?.split(' ')
-    .map((n) => n[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2)
-
-  // Check if dev bypass is active
-  const isDevBypass = typeof window !== 'undefined' && sessionStorage.getItem('devBypass') === 'true'
+  const navItems = [
+    { href: `${basePath}/`, label: 'Dashboard', icon: LayoutDashboard },
+    { href: `${basePath}/catalog`, label: 'Catalog', icon: Boxes },
+    { href: `${basePath}/suppliers`, label: 'Suppliers', icon: Building2 },
+  ]
 
   return (
     <header className="sticky top-0 z-50 border-b border-border/65 bg-background/75 backdrop-blur-xl">
       <div className="mx-auto max-w-7xl px-4 py-3 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between gap-3">
-          <Link to="/" className="flex items-center gap-3">
+          <Link to={basePath || '/'} className="flex items-center gap-3">
             <div className="grid h-11 w-11 place-items-center rounded-2xl bg-primary text-sm font-bold text-primary-foreground shadow-[0_18px_28px_-18px_hsl(var(--primary)/0.9)]">
               T4S
             </div>
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                Li & Fung
+                Your Company
               </p>
               <p className="text-sm font-semibold">Traceability Studio</p>
             </div>
@@ -61,10 +56,10 @@ export function AppNavigation() {
           <nav className="hidden flex-1 items-center justify-center gap-2 md:flex">
             {navItems.map((item) => {
               const Icon = item.icon
-              const isActive =
-                item.href === '/'
-                  ? location.pathname === '/'
-                  : location.pathname.startsWith(item.href)
+              const isDashboard = item.href === `${basePath}/`
+              const isActive = isDashboard
+                ? location.pathname === item.href || location.pathname === basePath
+                : location.pathname.startsWith(item.href)
 
               return (
                 <Link
@@ -89,7 +84,7 @@ export function AppNavigation() {
               variant="secondary"
               className="hidden rounded-full px-3 py-1 text-[11px] font-semibold md:inline-flex"
             >
-              {isDevBypass ? 'Dev Mode' : 'Workspace Active'}
+              Demo Mode
             </Badge>
 
             <DropdownMenu>
@@ -97,22 +92,18 @@ export function AppNavigation() {
                 <Button variant="outline" className="h-11 rounded-xl px-2.5">
                   <Avatar className="h-8 w-8 ring-2 ring-background">
                     <AvatarFallback className="bg-secondary text-xs font-semibold">
-                      {initials || (isDevBypass ? 'D' : 'U')}
+                      U
                     </AvatarFallback>
                   </Avatar>
-                  <span className="hidden text-sm md:inline">
-                    {user?.name || (isDevBypass ? 'Dev User' : 'User')}
-                  </span>
+                  <span className="hidden text-sm md:inline">Demo User</span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-60">
                 <DropdownMenuLabel>
                   <div className="flex flex-col">
-                    <span className="text-sm font-semibold">
-                      {user?.name || (isDevBypass ? 'Dev User' : 'Guest')}
-                    </span>
+                    <span className="text-sm font-semibold">Demo User</span>
                     <span className="text-xs font-normal text-muted-foreground">
-                      {user?.username || (isDevBypass ? 'dev@localhost' : '')}
+                      demo@example.com
                     </span>
                   </div>
                 </DropdownMenuLabel>
@@ -121,23 +112,6 @@ export function AppNavigation() {
                   <Settings className="mr-2 h-4 w-4" />
                   Settings
                 </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                {isDevBypass ? (
-                  <DropdownMenuItem
-                    onClick={() => {
-                      sessionStorage.removeItem('devBypass')
-                      window.location.reload()
-                    }}
-                  >
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Exit Dev Mode
-                  </DropdownMenuItem>
-                ) : (
-                  <DropdownMenuItem onClick={() => instance.logoutRedirect()}>
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Sign out
-                  </DropdownMenuItem>
-                )}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
@@ -146,10 +120,10 @@ export function AppNavigation() {
         <nav className="mt-3 flex gap-2 overflow-x-auto pb-1 md:hidden">
           {navItems.map((item) => {
             const Icon = item.icon
-            const isActive =
-              item.href === '/'
-                ? location.pathname === '/'
-                : location.pathname.startsWith(item.href)
+            const isDashboard = item.href === `${basePath}/`
+            const isActive = isDashboard
+              ? location.pathname === item.href || location.pathname === basePath
+              : location.pathname.startsWith(item.href)
 
             return (
               <Link

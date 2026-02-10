@@ -1,9 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
-import {
-  AuthenticatedTemplate,
-  UnauthenticatedTemplate,
-  useMsal,
-} from '@azure/msal-react'
+import { useMemo } from 'react'
 import {
   Boxes,
   CheckCircle2,
@@ -14,50 +9,86 @@ import {
   Sparkles,
   Workflow,
 } from 'lucide-react'
-import { Link, Route, Routes } from 'react-router-dom'
+import { Link, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 
 import { RootLayout } from '@/app/layouts/root-layout'
 import { CatalogPage } from '@/app/pages/catalog/catalog-page'
 import { ComponentDetailPage } from '@/app/pages/components/component-detail'
 import { ManageBOMPage } from '@/app/pages/components/manage-bom'
-import { LoginPage } from '@/app/pages/login-page'
 import { CreateMaterialPage } from '@/app/pages/materials/create-material'
 import { CreateProductPage } from '@/app/pages/products/create-product'
 import { ProductDetailPage } from '@/app/pages/products/product-detail'
 import { SuppliersPage } from '@/app/pages/suppliers/suppliers-page'
+import { FlowPickerPage } from '@/app/pages/flows/flow-picker'
+import { CreateProductV2Page } from '@/app/pages/flows/v2/create-product-v2'
+import { CreateComponentV2Page } from '@/app/pages/flows/v2/create-component-v2'
+import { CreateProductV3Page } from '@/app/pages/flows/v3/create-product-v3'
+import { CreateComponentV3Page } from '@/app/pages/flows/v3/create-component-v3'
+import { CreateProductV4Page } from '@/app/pages/flows/v4/create-product-v4'
+import { CreateComponentV4Page } from '@/app/pages/flows/v4/create-component-v4'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { getCachedProducts, getCachedMaterials } from '@/infrastructure/cache/catalog-cache'
 
-function useDevBypass() {
-  // Initialize from sessionStorage synchronously to avoid flash
-  const [isDevBypass, setIsDevBypass] = useState(() => {
-    if (typeof window === 'undefined') return false
-    return sessionStorage.getItem('devBypass') === 'true'
-  })
-
-  useEffect(() => {
-    // Re-check on mount in case of SSR hydration mismatch
-    const value = sessionStorage.getItem('devBypass') === 'true'
-    if (value !== isDevBypass) {
-      setIsDevBypass(value)
-    }
-
-    // Listen for storage changes (e.g., from login page)
-    const handleStorage = () => {
-      setIsDevBypass(sessionStorage.getItem('devBypass') === 'true')
-    }
-    window.addEventListener('storage', handleStorage)
-    return () => window.removeEventListener('storage', handleStorage)
-  }, [isDevBypass])
-
-  return isDevBypass
-}
-
 function AppRoutes() {
   return (
     <Routes>
+      {/* Redirect root to flows page */}
+      <Route path="/" element={<Navigate to="/flows" replace />} />
+
+      {/* Flow Picker - entry point for comparing variants */}
+      <Route path="flows" element={<FlowPickerPage />} />
+
+      {/* V1 - Current flow (Mode Picker) */}
+      <Route path="v1" element={<RootLayout />}>
+        <Route index element={<DashboardPage />} />
+        <Route path="catalog" element={<CatalogPage />} />
+        <Route path="catalog/products/create" element={<CreateProductPage />} />
+        <Route path="catalog/products/:productId" element={<ProductDetailPage />} />
+        <Route path="catalog/products/:productId/bom" element={<ManageBOMPage />} />
+        <Route path="catalog/components/create" element={<CreateMaterialPage />} />
+        <Route path="catalog/components/:componentId" element={<ComponentDetailPage />} />
+        <Route path="suppliers" element={<SuppliersPage />} />
+      </Route>
+
+      {/* V2 - Single Page flow */}
+      <Route path="v2" element={<RootLayout />}>
+        <Route index element={<DashboardPage />} />
+        <Route path="catalog" element={<CatalogPage />} />
+        <Route path="catalog/products/create" element={<CreateProductV2Page />} />
+        <Route path="catalog/products/:productId" element={<ProductDetailPage />} />
+        <Route path="catalog/products/:productId/bom" element={<ManageBOMPage />} />
+        <Route path="catalog/components/create" element={<CreateComponentV2Page />} />
+        <Route path="catalog/components/:componentId" element={<ComponentDetailPage />} />
+        <Route path="suppliers" element={<SuppliersPage />} />
+      </Route>
+
+      {/* V3 - Conversational flow */}
+      <Route path="v3" element={<RootLayout />}>
+        <Route index element={<DashboardPage />} />
+        <Route path="catalog" element={<CatalogPage />} />
+        <Route path="catalog/products/create" element={<CreateProductV3Page />} />
+        <Route path="catalog/products/:productId" element={<ProductDetailPage />} />
+        <Route path="catalog/products/:productId/bom" element={<ManageBOMPage />} />
+        <Route path="catalog/components/create" element={<CreateComponentV3Page />} />
+        <Route path="catalog/components/:componentId" element={<ComponentDetailPage />} />
+        <Route path="suppliers" element={<SuppliersPage />} />
+      </Route>
+
+      {/* V4 - Template flow */}
+      <Route path="v4" element={<RootLayout />}>
+        <Route index element={<DashboardPage />} />
+        <Route path="catalog" element={<CatalogPage />} />
+        <Route path="catalog/products/create" element={<CreateProductV4Page />} />
+        <Route path="catalog/products/:productId" element={<ProductDetailPage />} />
+        <Route path="catalog/products/:productId/bom" element={<ManageBOMPage />} />
+        <Route path="catalog/components/create" element={<CreateComponentV4Page />} />
+        <Route path="catalog/components/:componentId" element={<ComponentDetailPage />} />
+        <Route path="suppliers" element={<SuppliersPage />} />
+      </Route>
+
+      {/* Default routes (same as V1) */}
       <Route element={<RootLayout />}>
         <Route index element={<DashboardPage />} />
         <Route path="catalog" element={<CatalogPage />} />
@@ -79,22 +110,8 @@ function AppRoutes() {
 }
 
 export function AppRouter() {
-  const isDevBypass = useDevBypass()
-
-  if (isDevBypass) {
-    return <AppRoutes />
-  }
-
-  return (
-    <>
-      <UnauthenticatedTemplate>
-        <LoginPage />
-      </UnauthenticatedTemplate>
-      <AuthenticatedTemplate>
-        <AppRoutes />
-      </AuthenticatedTemplate>
-    </>
-  )
+  // Auth disabled - go directly to app
+  return <AppRoutes />
 }
 
 function ShellBackdrop() {
@@ -111,10 +128,16 @@ function ShellBackdrop() {
   )
 }
 
+// Hook to get the current variant prefix (v1, v2, v3, v4, or empty)
+function useVariantPrefix() {
+  const location = useLocation()
+  const match = location.pathname.match(/^\/(v[1-4])/)
+  return match ? match[1] : ''
+}
+
 export function DashboardPage() {
-  const { accounts } = useMsal()
-  const user = accounts[0]
-  const firstName = user?.name?.split(' ')[0]
+  const variantPrefix = useVariantPrefix()
+  const basePath = variantPrefix ? `/${variantPrefix}` : ''
 
   const products = useMemo(() => getCachedProducts(), [])
   const materials = useMemo(() => getCachedMaterials(), [])
@@ -126,13 +149,13 @@ export function DashboardPage() {
     {
       title: 'Create Product',
       description: 'Capture identity, category, and product media quickly.',
-      href: '/catalog/products/create',
+      href: `${basePath}/catalog/products/create`,
       icon: Package,
     },
     {
       title: 'Create Component',
       description: 'Add costed materials and reusable certificates.',
-      href: '/catalog/components/create',
+      href: `${basePath}/catalog/components/create`,
       icon: Layers,
     },
   ]
@@ -149,7 +172,7 @@ export function DashboardPage() {
               Operations Cockpit
             </Badge>
             <h1 className="mt-4 max-w-2xl text-4xl leading-tight sm:text-5xl">
-              {firstName ? `Welcome back, ${firstName}.` : 'Traceability Hub'}
+              Traceability Hub
             </h1>
             <p className="mt-4 max-w-2xl text-base text-muted-foreground sm:text-lg">
               Build products and components in cache-first mode, then map BOMs
@@ -158,13 +181,13 @@ export function DashboardPage() {
 
             <div className="mt-8 flex flex-wrap gap-3">
               <Button asChild variant="accent" size="lg" className="gap-2">
-                <Link to="/catalog/products/create">
+                <Link to={`${basePath}/catalog/products/create`}>
                   <Plus className="h-4 w-4" />
                   New Product
                 </Link>
               </Button>
               <Button asChild variant="outline" size="lg" className="gap-2">
-                <Link to="/catalog/components/create">
+                <Link to={`${basePath}/catalog/components/create`}>
                   <Layers className="h-4 w-4" />
                   New Component
                 </Link>

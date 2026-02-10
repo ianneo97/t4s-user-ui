@@ -1,5 +1,3 @@
-import type { PublicClientApplication } from '@azure/msal-browser'
-import { MsalProvider } from '@azure/msal-react'
 import { QueryCache, QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { StrictMode } from 'react'
@@ -24,20 +22,14 @@ const queryClient = new QueryClient({
   }),
 })
 
-interface Props {
-  pca: PublicClientApplication
-}
-
-function App({ pca }: Props) {
+function App() {
   return (
     <StrictMode>
-      <MsalProvider instance={pca}>
-        <QueryClientProvider client={queryClient}>
-          <AppRouter />
-          <Toaster duration={3000} />
-          {import.meta.env.DEV && <ReactQueryDevtools />}
-        </QueryClientProvider>
-      </MsalProvider>
+      <QueryClientProvider client={queryClient}>
+        <AppRouter />
+        <Toaster duration={3000} />
+        {import.meta.env.DEV && <ReactQueryDevtools />}
+      </QueryClientProvider>
     </StrictMode>
   )
 }
