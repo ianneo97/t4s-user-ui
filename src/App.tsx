@@ -1,0 +1,45 @@
+import type { PublicClientApplication } from '@azure/msal-browser'
+import { MsalProvider } from '@azure/msal-react'
+import { QueryCache, QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
+import { StrictMode } from 'react'
+import { toast } from 'sonner'
+
+import { AppRouter } from '@/app/router/app-router'
+import { Toaster } from '@/components/ui/sonner'
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 2 * 60 * 1000,
+      gcTime: 5 * 60 * 1000,
+      retry: false,
+      refetchOnWindowFocus: true,
+    },
+  },
+  queryCache: new QueryCache({
+    onError: (error) => {
+      toast.error(`Something went wrong: ${error.message}`)
+    },
+  }),
+})
+
+interface Props {
+  pca: PublicClientApplication
+}
+
+function App({ pca }: Props) {
+  return (
+    <StrictMode>
+      <MsalProvider instance={pca}>
+        <QueryClientProvider client={queryClient}>
+          <AppRouter />
+          <Toaster duration={3000} />
+          {import.meta.env.DEV && <ReactQueryDevtools />}
+        </QueryClientProvider>
+      </MsalProvider>
+    </StrictMode>
+  )
+}
+
+export default App
