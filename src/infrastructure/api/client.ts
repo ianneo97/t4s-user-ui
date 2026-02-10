@@ -2,31 +2,7 @@ import type { AxiosInstance, AxiosRequestConfig, AxiosError } from 'axios'
 import axios from 'axios'
 
 import { env } from '@/config/env'
-import { logger } from '@/lib/logger'
-import { acquireToken, msalInstance } from '@/lib/msal'
 import type { ApiError } from './types'
-
-const TOKEN_KEY = 'api_token'
-const EXPIRATION_KEY = 'api_token_exp'
-
-function getStoredToken() {
-  const token = sessionStorage.getItem(TOKEN_KEY)
-  const expiration = sessionStorage.getItem(EXPIRATION_KEY)
-  return {
-    token,
-    expirationTime: expiration ? parseInt(expiration) : 0,
-  }
-}
-
-function setStoredToken(token: string, expirationTime: number) {
-  sessionStorage.setItem(TOKEN_KEY, token)
-  sessionStorage.setItem(EXPIRATION_KEY, expirationTime.toString())
-}
-
-function clearStoredToken() {
-  sessionStorage.removeItem(TOKEN_KEY)
-  sessionStorage.removeItem(EXPIRATION_KEY)
-}
 
 function getWorkspaceId() {
   return sessionStorage.getItem('workspace') || ''
@@ -50,39 +26,12 @@ function createApiClient(): AxiosInstance {
       config.headers['X-T4S-OWI'] = workspaceId
     }
 
-    const currentTime = Date.now()
-    const { token, expirationTime } = getStoredToken()
-
-    if (token && currentTime < expirationTime) {
-      if (config.headers && !config.headers.Authorization) {
-        config.headers.Authorization = `Bearer ${token}`
-      }
-      return config
-    }
-
-    try {
-      const newToken = await acquireToken()
-      if (newToken) {
-        setStoredToken(newToken, currentTime + 55 * 60 * 1000)
-        if (config.headers && !config.headers.Authorization) {
-          config.headers.Authorization = `Bearer ${newToken}`
-        }
-      }
-    } catch (error) {
-      logger.error('Failed to acquire token', error, { context: 'API' })
-    }
-
     return config
   })
 
   instance.interceptors.response.use(
     (response) => response,
     async (error: AxiosError<ApiError>) => {
-      if (error.response?.status === 401) {
-        clearStoredToken()
-        msalInstance.loginRedirect()
-      }
-
       const apiError: ApiError = {
         message: error.response?.data?.message || error.message,
         code: error.response?.data?.code,

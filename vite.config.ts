@@ -25,7 +25,6 @@ export default defineConfig(({ mode }) => ({
       output: {
         manualChunks: {
           vendor: ['react', 'react-dom', 'react-router-dom'],
-          msal: ['@azure/msal-browser', '@azure/msal-react'],
           query: ['@tanstack/react-query'],
         },
       },
