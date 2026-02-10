@@ -27,8 +27,6 @@
     ]
   },
   "dependencies": {
-    "@azure/msal-browser": "^3.26.0",
-    "@azure/msal-react": "^2.1.0",
     "@hookform/resolvers": "3.9.0",
     "@radix-ui/react-alert-dialog": "^1.1.15",
     "@radix-ui/react-avatar": "^1.1.11",
@@ -53,7 +51,6 @@
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "dayjs": "^1.11.19",
-    "jwt-decode": "^4.0.0",
     "lucide-react": "^0.563.0",
     "postcss": "^8.5.6",
     "react": "^19.2.0",
