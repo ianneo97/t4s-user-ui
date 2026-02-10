@@ -1,14 +1,11 @@
 [phases.setup]
 nixPkgs = ["nodejs_20"]
 
-[variables]
-NODE_VERSION = "20"
-
 [phases.install]
-cmds = ["rm -rf node_modules package-lock.json && npm install --legacy-peer-deps"]
+cmds = ["npm install --legacy-peer-deps"]
 
 [phases.build]
 cmds = ["npm run build"]
 
 [start]
-cmd = "npm run start"
+cmd = "node server.js"
