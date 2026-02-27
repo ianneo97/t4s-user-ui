@@ -13,6 +13,7 @@ export interface CachedSupplier {
   contactPhone?: string
   website?: string
   notes?: string
+  linkedWorkspaceId?: string
   createdAt: string
   updatedAt: string
 }
@@ -94,6 +95,7 @@ export interface CachedMaterial {
   photos: CachedImage[]
   certificates: CachedMaterialCertificate[]
   substances: CachedMaterialSubstance[]
+  workspaceId?: string
   createdAt: string
   updatedAt: string
 }
@@ -132,6 +134,7 @@ export interface CachedProduct {
   isActive: boolean
   photos: CachedImage[]
   bom?: CachedProductBom
+  workspaceId?: string
   createdAt: string
   updatedAt: string
 }
@@ -221,7 +224,8 @@ function readCatalogCache(): CatalogCache {
 
         const substances = Array.isArray(safeMaterial.substances)
           ? safeMaterial.substances.map((substance) => {
-              const safeSubstance = substance as Partial<CachedMaterialSubstance>
+              const safeSubstance =
+                substance as Partial<CachedMaterialSubstance>
               return {
                 ...safeSubstance,
                 subCompositions: Array.isArray(safeSubstance.subCompositions)
@@ -429,10 +433,13 @@ export function getCachedSuppliers(): CachedSupplier[] {
   return readCatalogCache().suppliers
 }
 
-export function getCachedSupplierById(supplierId: string): CachedSupplier | null {
+export function getCachedSupplierById(
+  supplierId: string
+): CachedSupplier | null {
   return (
-    readCatalogCache().suppliers.find((supplier) => supplier.id === supplierId) ??
-    null
+    readCatalogCache().suppliers.find(
+      (supplier) => supplier.id === supplierId
+    ) ?? null
   )
 }
 

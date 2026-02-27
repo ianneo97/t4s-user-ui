@@ -44,6 +44,14 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { WORKSPACES } from '@/app/contexts/workspace-context'
+import {
   getCachedSuppliers,
   createCachedSupplier,
   updateCachedSupplier,
@@ -68,6 +76,7 @@ interface SupplierFormData {
   contactPhone?: string
   website?: string
   notes?: string
+  linkedWorkspaceId?: string
 }
 
 function SupplierDialog({
@@ -89,6 +98,7 @@ function SupplierDialog({
     contactPhone: '',
     website: '',
     notes: '',
+    linkedWorkspaceId: 'none',
   })
 
   useEffect(() => {
@@ -101,6 +111,7 @@ function SupplierDialog({
         contactPhone: supplier.contactPhone || '',
         website: supplier.website || '',
         notes: supplier.notes || '',
+        linkedWorkspaceId: supplier.linkedWorkspaceId || 'none',
       })
     } else if (open) {
       setFormData({
@@ -111,6 +122,7 @@ function SupplierDialog({
         contactPhone: '',
         website: '',
         notes: '',
+        linkedWorkspaceId: 'none',
       })
     }
   }, [open, supplier])
@@ -124,7 +136,13 @@ function SupplierDialog({
       toast.error('Country of origin is required')
       return
     }
-    onSave(formData)
+
+    const dataToSave = { ...formData }
+    if (dataToSave.linkedWorkspaceId === 'none') {
+      dataToSave.linkedWorkspaceId = undefined
+    }
+
+    onSave(dataToSave)
     onOpenChange(false)
   }
 
@@ -132,18 +150,78 @@ function SupplierDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{supplier ? 'Edit Supplier' : 'Add Supplier'}</DialogTitle>
+          <DialogTitle>
+            {supplier ? 'Edit Supplier' : 'Add Supplier'}
+          </DialogTitle>
           <DialogDescription>
-            {supplier ? 'Update supplier information' : 'Add a new supplier to your network'}
+            {supplier
+              ? 'Update supplier information'
+              : 'Add a new supplier to your network'}
           </DialogDescription>
         </DialogHeader>
 
         <div className="grid gap-4 py-4">
+          <div className="space-y-2 rounded-lg border border-indigo-500/20 bg-indigo-500/5 p-4">
+            <label className="text-sm font-medium text-indigo-700">
+              Search Platform Directory (Optional)
+            </label>
+            <Select
+              value={formData.linkedWorkspaceId}
+              onValueChange={(val) => {
+                if (val === 'none') {
+                  setFormData((prev) => ({
+                    ...prev,
+                    linkedWorkspaceId: 'none',
+                  }))
+                  return
+                }
+                const ws = WORKSPACES.find((w) => w.id === val)
+                if (ws) {
+                  setFormData((prev) => ({
+                    ...prev,
+                    name: ws.name,
+                    linkedWorkspaceId: val,
+                    // Auto-fill some dummy data for the demo based on the workspace
+                    countryOfOrigin: ws.id.includes('mfg')
+                      ? 'China'
+                      : 'Netherlands',
+                    address: ws.id.includes('mfg')
+                      ? '123 Manufacturing Blvd, Qingdao'
+                      : '456 Retail Ave, Amsterdam',
+                    contactEmail: `contact@${ws.name.toLowerCase().replace(/\s+/g, '')}.com`,
+                    website: `https://www.${ws.name.toLowerCase().replace(/\s+/g, '')}.com`,
+                  }))
+                  toast.success(`Auto-filled details for ${ws.name}`)
+                }
+              }}
+            >
+              <SelectTrigger className="border-indigo-500/30 bg-white">
+                <SelectValue placeholder="Search for existing platform companies..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">
+                  Manual Entry (External Supplier)
+                </SelectItem>
+                {WORKSPACES.map((w) => (
+                  <SelectItem key={w.id} value={w.id}>
+                    {w.name} ({w.type})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-indigo-600/80">
+              Select an existing company on the platform to automatically
+              connect and fill their details.
+            </p>
+          </div>
+
           <div className="space-y-2">
             <label className="text-sm font-medium">Supplier Name *</label>
             <Input
               value={formData.name}
-              onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, name: e.target.value }))
+              }
               placeholder="Enter supplier name"
             />
           </div>
@@ -152,7 +230,12 @@ function SupplierDialog({
             <label className="text-sm font-medium">Country of Origin *</label>
             <Input
               value={formData.countryOfOrigin}
-              onChange={(e) => setFormData((prev) => ({ ...prev, countryOfOrigin: e.target.value }))}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  countryOfOrigin: e.target.value,
+                }))
+              }
               placeholder="e.g., Germany, USA, China"
             />
           </div>
@@ -161,7 +244,9 @@ function SupplierDialog({
             <label className="text-sm font-medium">Address</label>
             <Textarea
               value={formData.address}
-              onChange={(e) => setFormData((prev) => ({ ...prev, address: e.target.value }))}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, address: e.target.value }))
+              }
               placeholder="Full address"
               rows={2}
             />
@@ -173,7 +258,12 @@ function SupplierDialog({
               <Input
                 type="email"
                 value={formData.contactEmail}
-                onChange={(e) => setFormData((prev) => ({ ...prev, contactEmail: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    contactEmail: e.target.value,
+                  }))
+                }
                 placeholder="contact@supplier.com"
               />
             </div>
@@ -183,7 +273,12 @@ function SupplierDialog({
               <Input
                 type="tel"
                 value={formData.contactPhone}
-                onChange={(e) => setFormData((prev) => ({ ...prev, contactPhone: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    contactPhone: e.target.value,
+                  }))
+                }
                 placeholder="+1 234 567 8900"
               />
             </div>
@@ -194,7 +289,9 @@ function SupplierDialog({
             <Input
               type="url"
               value={formData.website}
-              onChange={(e) => setFormData((prev) => ({ ...prev, website: e.target.value }))}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, website: e.target.value }))
+              }
               placeholder="https://supplier.com"
             />
           </div>
@@ -203,7 +300,9 @@ function SupplierDialog({
             <label className="text-sm font-medium">Notes</label>
             <Textarea
               value={formData.notes}
-              onChange={(e) => setFormData((prev) => ({ ...prev, notes: e.target.value }))}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, notes: e.target.value }))
+              }
               placeholder="Additional notes about this supplier"
               rows={3}
             />
@@ -214,7 +313,9 @@ function SupplierDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button onClick={handleSave}>{supplier ? 'Save Changes' : 'Add Supplier'}</Button>
+          <Button onClick={handleSave}>
+            {supplier ? 'Save Changes' : 'Add Supplier'}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -239,7 +340,17 @@ function SupplierCard({
           </div>
 
           <div className="min-w-0">
-            <h3 className="font-semibold">{supplier.name}</h3>
+            <div className="flex items-center gap-2">
+              <h3 className="font-semibold">{supplier.name}</h3>
+              {supplier.linkedWorkspaceId && (
+                <Badge
+                  variant="outline"
+                  className="border-indigo-500/30 bg-indigo-500/10 text-[10px] text-indigo-700"
+                >
+                  Platform Connected
+                </Badge>
+              )}
+            </div>
             <div className="mt-1 flex flex-wrap items-center gap-2">
               <Badge variant="secondary" className="text-[10px]">
                 <MapPin className="mr-1 h-3 w-3" />
@@ -276,7 +387,10 @@ function SupplierCard({
         </DropdownMenu>
       </div>
 
-      {(supplier.address || supplier.contactEmail || supplier.contactPhone || supplier.website) && (
+      {(supplier.address ||
+        supplier.contactEmail ||
+        supplier.contactPhone ||
+        supplier.website) && (
         <div className="mt-4 space-y-2 border-t border-border/50 pt-4">
           {supplier.address && (
             <div className="flex items-start gap-2 text-sm text-muted-foreground">
@@ -287,7 +401,10 @@ function SupplierCard({
           {supplier.contactEmail && (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Mail className="h-3.5 w-3.5 shrink-0" />
-              <a href={`mailto:${supplier.contactEmail}`} className="hover:text-foreground">
+              <a
+                href={`mailto:${supplier.contactEmail}`}
+                className="hover:text-foreground"
+              >
                 {supplier.contactEmail}
               </a>
             </div>
@@ -295,7 +412,10 @@ function SupplierCard({
           {supplier.contactPhone && (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Phone className="h-3.5 w-3.5 shrink-0" />
-              <a href={`tel:${supplier.contactPhone}`} className="hover:text-foreground">
+              <a
+                href={`tel:${supplier.contactPhone}`}
+                className="hover:text-foreground"
+              >
                 {supplier.contactPhone}
               </a>
             </div>
@@ -328,7 +448,9 @@ export function SuppliersPage() {
   const [suppliers, setSuppliers] = useState<CachedSupplier[]>([])
   const [searchQuery, setSearchQuery] = useState('')
   const [dialogOpen, setDialogOpen] = useState(false)
-  const [editingSupplier, setEditingSupplier] = useState<CachedSupplier | null>(null)
+  const [editingSupplier, setEditingSupplier] = useState<CachedSupplier | null>(
+    null
+  )
   const [deleteId, setDeleteId] = useState<string | null>(null)
 
   useEffect(() => {
@@ -472,7 +594,11 @@ export function SuppliersPage() {
             <p className="mt-2 text-muted-foreground">
               Try adjusting your search query
             </p>
-            <Button variant="outline" onClick={() => setSearchQuery('')} className="mt-6">
+            <Button
+              variant="outline"
+              onClick={() => setSearchQuery('')}
+              className="mt-6"
+            >
               Clear Search
             </Button>
           </div>
@@ -480,7 +606,8 @@ export function SuppliersPage() {
           <>
             <div className="mb-4 flex items-center justify-between">
               <p className="text-sm text-muted-foreground">
-                {filteredSuppliers.length} supplier{filteredSuppliers.length !== 1 ? 's' : ''}
+                {filteredSuppliers.length} supplier
+                {filteredSuppliers.length !== 1 ? 's' : ''}
                 {searchQuery && ` matching "${searchQuery}"`}
               </p>
             </div>
@@ -516,9 +643,10 @@ export function SuppliersPage() {
               Delete Supplier
             </AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete "{supplierToDelete?.name}"? This action
-              cannot be undone. Substances referencing this supplier will keep their
-              current data but won't be linked to this supplier anymore.
+              Are you sure you want to delete "{supplierToDelete?.name}"? This
+              action cannot be undone. Substances referencing this supplier will
+              keep their current data but won't be linked to this supplier
+              anymore.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

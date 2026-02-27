@@ -81,8 +81,20 @@ function CommandPalette({
   }, [items, query])
 
   const actions = [
-    { id: 'new-product', label: 'Create Product', icon: Package, shortcut: 'P', action: () => navigate('/catalog/products/create') },
-    { id: 'new-component', label: 'Create Component', icon: Layers, shortcut: 'C', action: () => navigate('/catalog/components/create') },
+    {
+      id: 'new-product',
+      label: 'Create Product',
+      icon: Package,
+      shortcut: 'P',
+      action: () => navigate('/catalog/products/builder'),
+    },
+    {
+      id: 'new-component',
+      label: 'Create Component',
+      icon: Layers,
+      shortcut: 'C',
+      action: () => navigate('/catalog/components/create'),
+    },
   ]
 
   useEffect(() => {
@@ -100,7 +112,10 @@ function CommandPalette({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="overflow-hidden p-0 sm:max-w-xl" onKeyDown={handleKeyDown}>
+      <DialogContent
+        className="overflow-hidden p-0 sm:max-w-xl"
+        onKeyDown={handleKeyDown}
+      >
         <div className="flex items-center border-b border-border/60 px-4">
           <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
           <input
@@ -112,7 +127,10 @@ function CommandPalette({
             className="h-14 flex-1 bg-transparent px-3 text-base outline-none placeholder:text-muted-foreground/60"
           />
           {query && (
-            <button onClick={() => setQuery('')} className="p-1 text-muted-foreground hover:text-foreground">
+            <button
+              onClick={() => setQuery('')}
+              className="p-1 text-muted-foreground hover:text-foreground"
+            >
               <X className="h-4 w-4" />
             </button>
           )}
@@ -121,17 +139,24 @@ function CommandPalette({
         <div className="max-h-[360px] overflow-y-auto p-2">
           {!query && (
             <div className="mb-2">
-              <p className="px-2 py-1.5 text-xs font-medium text-muted-foreground">Quick Actions</p>
+              <p className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
+                Quick Actions
+              </p>
               {actions.map((action) => (
                 <button
                   key={action.id}
-                  onClick={() => { action.action(); onOpenChange(false) }}
+                  onClick={() => {
+                    action.action()
+                    onOpenChange(false)
+                  }}
                   className="flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left transition-colors hover:bg-secondary/80"
                 >
                   <div className="grid h-8 w-8 place-items-center rounded-md bg-accent/10">
                     <action.icon className="h-4 w-4 text-accent" />
                   </div>
-                  <span className="flex-1 text-sm font-medium">{action.label}</span>
+                  <span className="flex-1 text-sm font-medium">
+                    {action.label}
+                  </span>
                   <kbd className="rounded bg-secondary px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
                     {action.shortcut}
                   </kbd>
@@ -156,18 +181,30 @@ function CommandPalette({
                 return (
                   <button
                     key={`${item.type}-${item.data.id}`}
-                    onClick={() => { onSelect(item); onOpenChange(false) }}
+                    onClick={() => {
+                      onSelect(item)
+                      onOpenChange(false)
+                    }}
                     className="flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left transition-colors hover:bg-secondary/80"
                   >
-                    <div className={cn(
-                      'grid h-8 w-8 place-items-center rounded-md',
-                      isProduct ? 'bg-secondary/80' : 'bg-accent/10'
-                    )}>
-                      <Icon className={cn('h-4 w-4', isProduct ? 'text-muted-foreground' : 'text-accent')} />
+                    <div
+                      className={cn(
+                        'grid h-8 w-8 place-items-center rounded-md',
+                        isProduct ? 'bg-secondary/80' : 'bg-accent/10'
+                      )}
+                    >
+                      <Icon
+                        className={cn(
+                          'h-4 w-4',
+                          isProduct ? 'text-muted-foreground' : 'text-accent'
+                        )}
+                      />
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-medium">{name}</p>
-                      <p className="truncate text-xs text-muted-foreground">{meta}</p>
+                      <p className="truncate text-xs text-muted-foreground">
+                        {meta}
+                      </p>
                     </div>
                     <Badge variant="outline" className="shrink-0 text-[10px]">
                       {isProduct ? 'Product' : 'Component'}
@@ -180,7 +217,9 @@ function CommandPalette({
 
           {query && filtered.length === 0 && (
             <div className="py-8 text-center">
-              <p className="text-sm text-muted-foreground">No results for "{query}"</p>
+              <p className="text-sm text-muted-foreground">
+                No results for "{query}"
+              </p>
             </div>
           )}
         </div>
@@ -188,14 +227,23 @@ function CommandPalette({
         <div className="flex items-center justify-between border-t border-border/60 bg-secondary/30 px-4 py-2 text-xs text-muted-foreground">
           <div className="flex items-center gap-3">
             <span className="flex items-center gap-1">
-              <kbd className="rounded bg-secondary px-1 py-0.5 font-mono">↑↓</kbd> navigate
+              <kbd className="rounded bg-secondary px-1 py-0.5 font-mono">
+                ↑↓
+              </kbd>{' '}
+              navigate
             </span>
             <span className="flex items-center gap-1">
-              <kbd className="rounded bg-secondary px-1 py-0.5 font-mono">↵</kbd> select
+              <kbd className="rounded bg-secondary px-1 py-0.5 font-mono">
+                ↵
+              </kbd>{' '}
+              select
             </span>
           </div>
           <span className="flex items-center gap-1">
-            <kbd className="rounded bg-secondary px-1 py-0.5 font-mono">esc</kbd> close
+            <kbd className="rounded bg-secondary px-1 py-0.5 font-mono">
+              esc
+            </kbd>{' '}
+            close
           </span>
         </div>
       </DialogContent>
@@ -203,7 +251,17 @@ function CommandPalette({
   )
 }
 
-function StatCard({ label, value, trend, icon: Icon }: { label: string; value: number; trend?: string; icon: React.ElementType }) {
+function StatCard({
+  label,
+  value,
+  trend,
+  icon: Icon,
+}: {
+  label: string
+  value: number
+  trend?: string
+  icon: React.ElementType
+}) {
   return (
     <div className="flex items-center gap-3 rounded-xl border border-border/50 bg-card/40 px-4 py-3 backdrop-blur-sm">
       <div className="grid h-9 w-9 place-items-center rounded-lg bg-secondary/60">
@@ -223,7 +281,13 @@ function StatCard({ label, value, trend, icon: Icon }: { label: string; value: n
   )
 }
 
-function ItemRow({ item, onNavigate }: { item: CatalogItem; onNavigate: (item: CatalogItem) => void }) {
+function ItemRow({
+  item,
+  onNavigate,
+}: {
+  item: CatalogItem
+  onNavigate: (item: CatalogItem) => void
+}) {
   const isProduct = item.type === 'product'
   const Icon = isProduct ? Package : Layers
   const data = item.data
@@ -242,11 +306,20 @@ function ItemRow({ item, onNavigate }: { item: CatalogItem; onNavigate: (item: C
       onClick={() => onNavigate(item)}
       className="group flex w-full items-center gap-4 rounded-xl border border-transparent px-4 py-3 text-left transition-all duration-150 hover:border-border/60 hover:bg-card/60 hover:shadow-sm active:scale-[0.995]"
     >
-      <div className={cn(
-        'grid h-10 w-10 shrink-0 place-items-center rounded-xl transition-colors',
-        isProduct ? 'bg-secondary/70 group-hover:bg-secondary' : 'bg-accent/10 group-hover:bg-accent/15'
-      )}>
-        <Icon className={cn('h-4 w-4', isProduct ? 'text-muted-foreground' : 'text-accent')} />
+      <div
+        className={cn(
+          'grid h-10 w-10 shrink-0 place-items-center rounded-xl transition-colors',
+          isProduct
+            ? 'bg-secondary/70 group-hover:bg-secondary'
+            : 'bg-accent/10 group-hover:bg-accent/15'
+        )}
+      >
+        <Icon
+          className={cn(
+            'h-4 w-4',
+            isProduct ? 'text-muted-foreground' : 'text-accent'
+          )}
+        />
       </div>
 
       <div className="min-w-0 flex-1">
@@ -261,10 +334,16 @@ function ItemRow({ item, onNavigate }: { item: CatalogItem; onNavigate: (item: C
 
       <div className="hidden items-center gap-6 md:flex">
         <span className="flex min-w-[100px] items-center gap-1.5 text-sm text-muted-foreground">
-          {isProduct ? <Workflow className="h-3.5 w-3.5" /> : <FileText className="h-3.5 w-3.5" />}
+          {isProduct ? (
+            <Workflow className="h-3.5 w-3.5" />
+          ) : (
+            <FileText className="h-3.5 w-3.5" />
+          )}
           {secondary}
         </span>
-        <span className="min-w-[60px] text-right text-xs text-muted-foreground/70">{time}</span>
+        <span className="min-w-[60px] text-right text-xs text-muted-foreground/70">
+          {time}
+        </span>
       </div>
 
       <ArrowRight className="h-4 w-4 text-muted-foreground/30 transition-all group-hover:translate-x-0.5 group-hover:text-muted-foreground" />
@@ -295,7 +374,7 @@ function EmptyState({ onOpenPalette }: { onOpenPalette: () => void }) {
           </Link>
         </Button>
         <Button asChild variant="accent" className="gap-2">
-          <Link to="/catalog/products/create">
+          <Link to="/catalog/products/builder">
             <Plus className="h-4 w-4" />
             New Product
           </Link>
@@ -308,24 +387,44 @@ function EmptyState({ onOpenPalette }: { onOpenPalette: () => void }) {
       >
         <Command className="h-3.5 w-3.5" />
         <span>Press</span>
-        <kbd className="rounded border border-border bg-secondary px-1.5 py-0.5 font-mono text-xs">⌘K</kbd>
+        <kbd className="rounded border border-border bg-secondary px-1.5 py-0.5 font-mono text-xs">
+          ⌘K
+        </kbd>
         <span>for quick actions</span>
       </button>
     </div>
   )
 }
 
+import { useWorkspace } from '@/app/contexts/workspace-context'
+
 export function CatalogPage() {
   const navigate = useNavigate()
+  const { activeWorkspace } = useWorkspace()
   const [paletteOpen, setPaletteOpen] = useState(false)
   const [filter, setFilter] = useState<'all' | 'products' | 'components'>('all')
 
-  const products = useMemo(() => getCachedProducts(), [])
-  const materials = useMemo(() => getCachedMaterials(), [])
+  const products = useMemo(() => {
+    return getCachedProducts().filter(
+      (p) => !p.workspaceId || p.workspaceId === activeWorkspace.id
+    )
+  }, [activeWorkspace.id])
+
+  const materials = useMemo(() => {
+    return getCachedMaterials().filter(
+      (m) => !m.workspaceId || m.workspaceId === activeWorkspace.id
+    )
+  }, [activeWorkspace.id])
 
   const allItems: CatalogItem[] = useMemo(() => {
-    const productItems: CatalogItem[] = products.map((p) => ({ type: 'product', data: p }))
-    const componentItems: CatalogItem[] = materials.map((m) => ({ type: 'component', data: m }))
+    const productItems: CatalogItem[] = products.map((p) => ({
+      type: 'product',
+      data: p,
+    }))
+    const componentItems: CatalogItem[] = materials.map((m) => ({
+      type: 'component',
+      data: m,
+    }))
     return [...productItems, ...componentItems].sort((a, b) => {
       const aTime = new Date(a.data.updatedAt || 0).getTime()
       const bTime = new Date(b.data.updatedAt || 0).getTime()
@@ -335,7 +434,8 @@ export function CatalogPage() {
 
   const filteredItems = useMemo(() => {
     if (filter === 'all') return allItems
-    if (filter === 'products') return allItems.filter((i) => i.type === 'product')
+    if (filter === 'products')
+      return allItems.filter((i) => i.type === 'product')
     return allItems.filter((i) => i.type === 'component')
   }, [allItems, filter])
 
@@ -345,13 +445,16 @@ export function CatalogPage() {
     withBom: products.filter((p) => (p.bom?.items?.length || 0) > 0).length,
   }
 
-  const handleNavigate = useCallback((item: CatalogItem) => {
-    if (item.type === 'product') {
-      navigate(`/catalog/products/${item.data.id}`)
-    } else {
-      navigate(`/catalog/components/${item.data.id}`)
-    }
-  }, [navigate])
+  const handleNavigate = useCallback(
+    (item: CatalogItem) => {
+      if (item.type === 'product') {
+        navigate(`/catalog/products/${item.data.id}`)
+      } else {
+        navigate(`/catalog/components/${item.data.id}`)
+      }
+    },
+    [navigate]
+  )
 
   // Keyboard shortcut: Cmd+K
   useEffect(() => {
@@ -364,7 +467,7 @@ export function CatalogPage() {
       if (!paletteOpen) {
         if (e.key === 'p' && (e.metaKey || e.ctrlKey) && e.shiftKey) {
           e.preventDefault()
-          navigate('/catalog/products/create')
+          navigate('/catalog/products/builder')
         }
         if (e.key === 'c' && (e.metaKey || e.ctrlKey) && e.shiftKey) {
           e.preventDefault()
@@ -412,7 +515,7 @@ export function CatalogPage() {
               </button>
 
               <Button asChild variant="accent" size="sm" className="gap-1.5">
-                <Link to="/catalog/products/create">
+                <Link to="/catalog/products/builder">
                   <Plus className="h-3.5 w-3.5" />
                   <span className="hidden sm:inline">New</span>
                 </Link>
@@ -423,9 +526,21 @@ export function CatalogPage() {
           {/* Stats */}
           {!isEmpty && (
             <div className="mt-6 grid grid-cols-3 gap-3">
-              <StatCard label="Products" value={stats.products} icon={Package} />
-              <StatCard label="Components" value={stats.components} icon={Layers} />
-              <StatCard label="With BOM" value={stats.withBom} icon={Workflow} />
+              <StatCard
+                label="Products"
+                value={stats.products}
+                icon={Package}
+              />
+              <StatCard
+                label="Components"
+                value={stats.components}
+                icon={Layers}
+              />
+              <StatCard
+                label="With BOM"
+                value={stats.withBom}
+                icon={Workflow}
+              />
             </div>
           )}
         </div>
